@@ -40,9 +40,16 @@ Instead of fixed "test projects" like JUnit, NUnit,..., pytest uses the standard
 
   - test prefixed test functions or methods inside Test prefixed test classes (without an __init__ method). Methods decorated with @staticmethod and @classmethods are also considered.
 
-As long as your test files and test classes/functions are named like the convention, it will be discovered. You can also change the convention if needed with a **configuration file**
+As long as your test files and test classes/functions are named like the convention, it will be discovered. You can also change the convention if needed with a **configuration file**.
 
-You can have the tests as a separate package from your app code:
+### WARNING
+
+Even though pytest can **discover** the tests, it cannot automatically handle **imports** depends on your project layout because Python shennanigans. Some example are given below.
+
+### Separate test folder
+
+You can have the tests as a separate package/folder from your app code which is wrapped in a `src` folder:
+
 ```
 pyproject.toml
 src/
@@ -56,3 +63,46 @@ tests/
     ...
 ```
 
+If you use this style, where there's a `src` folder wrapping your app code, auto import will fail, and you will need to do extra shennanigans below.
+
+Why deal with this hassle and just not use a `src` wrapping folder? [This is why.](https://blog.ionelmc.ro/2014/05/25/python-packaging/#the-structure%3E)
+
+TLDR, to ensure tests are able to run with installed versions of your app, since current working folder is auto added into python import path and it's unsafe to rely on that behavior.
+
+Either invoke pytest with an environment variable:
+
+```bash
+PYTHONPATH=src pytest
+```
+
+Or, better yet, add this to your `pytest.toml` config file:
+```toml
+[pytest]
+pythonpath = ["src"]
+```
+Then just run `pytest`. Your tests import should be able to work now.
+
+### Inlined tests
+
+Another structure is to have tests as part of the application code, if you want to distribute tests with your app:
+
+```
+pyproject.toml
+[src/]mypkg/
+    __init__.py
+    app.py
+    view.py
+    tests/
+        __init__.py
+        test_app.py
+        test_view.py
+        ...
+```
+
+Then, just run your tests with:
+```bash
+pytest --pyargs src/mypkg
+```
+Replace `src/mypkg` with the path to your package from current directory.
+
+### EXTRA: Import mode
