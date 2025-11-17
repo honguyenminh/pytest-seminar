@@ -1,4 +1,4 @@
-# Pytest 101
+# pytest 101
 
 *pytest* is a tool/framework used for writing and executing tests in Python
 
@@ -81,12 +81,87 @@ class TestClassDemoInstance:
 This would fail at test_two.  
 However, attributes on the class itself is shared since instances share the same class. You usually dont need to care about this though.
 
+## Other frequently used tools
+
+pytest also provides a number of utilities to make writing tests easier.
+
+### Compare floating-point values
+
+When testing floating point values, since they are not exact and can vary a bit, we usually need to approximate the values in some way.
+
+pytest provides `pytest.approx()` as the tool for approximating floating point values, and works with scalars, lists, and NumPy arrays.
+
+```py
+import pytest
+
+def test_sum():
+    assert (0.1 + 0.2) == pytest.approx(0.3)
+```
+
+### Builtin fixtures - Request temp folder for functional tests
+
+pytest provides Builtin **fixtures/function** arguments to request arbitrary resources.
+
+To use a fixture, put its name in the test function parameter list.
+
+One useful one is `tmp_path`, to get a unique temporary directory:
+
+```py
+def test_needsfiles(tmp_path):
+    # use folder at tmp_path here
+    print(tmp_path)
+    assert 0
+```
+
+There are also other fixtures, and you can write your own too. To show all fixtures, both builtin and custom, run:
+
+```bash
+pytest --fixtures 
+```
+
+## But what is fixtures?
+
+In testing, a fixture provides a defined, reliable and consistent context for the tests. This could include environment (for example a database configured with known parameters) or content (such as a dataset).
+
+Fixtures define the steps and data that constitute the *arrange* phase of a test. In pytest, they are **functions** you define that serve this purpose. They can also be used to define a test’s *act* phase; this is a powerful technique for designing more complex tests.
+
+The services, state, or other operating environments set up by fixtures are accessed by test functions through arguments. For each fixture used by a test function there is typically a parameter (named after the fixture) in the test function’s definition.
+
+We can tell pytest that a function is a fixture by decorating it with `@pytest.fixture`. Here’s a simple example of what a fixture in pytest might look like:
+
+```py
+import pytest
+
+class Fruit:
+    def __init__(self, name):
+        self.name = name
+
+    def __eq__(self, other):
+        return self.name == other.name
+
+@pytest.fixture
+def my_fruit():
+    return Fruit("apple")
+
+@pytest.fixture
+def fruit_basket(my_fruit):
+    return [Fruit("banana"), my_fruit]
+
+def test_my_fruit_in_basket(my_fruit, fruit_basket):
+    assert my_fruit in fruit_basket
+```
+
+## `mark` your test - metadata for tests
+
+Another feature of pytest is `pytest.mark`. `mark` is a helper to set metadata on test functions.
+
+**TODO: finish this**
 
 ## Tests structure
 
 ### Test discovery
 
-Pytest does **NOT** have a fixed, required folder structure.
+pytest does **NOT** have a fixed, required folder structure.
 You can put tests anywhere you want, in any project organization as needed.
 
 Instead of fixed "test projects" like JUnit, NUnit,..., pytest uses the standard convention for "Python test discovery" instead:
@@ -99,9 +174,9 @@ Instead of fixed "test projects" like JUnit, NUnit,..., pytest uses the standard
 
 - From those files, collect test items:
 
-  - test prefixed test functions or methods outside of class.
+  - `test` prefixed test functions or methods outside of class.
 
-  - test prefixed test functions or methods inside Test prefixed test classes (without an __init__ method). Methods decorated with @staticmethod and @classmethods are also considered.
+  - `test` prefixed test functions or methods inside `Test` prefixed test classes (without an `__init__` method). Methods decorated with `@staticmethod` and `@classmethods` are also considered.
 
 As long as your test files and test classes/functions are named like the convention, it will be discovered. You can also change the convention if needed with a **configuration file**.
 
@@ -206,4 +281,3 @@ tests/
 Now pytest will load the modules as `tests.foo.test_view` and `tests.bar.test_view`, allowing you to have modules with the same name. But now this introduces a subtle problem: in order to load the test modules from the `tests` directory, pytest prepends the root of the repository to sys.path, which adds the side-effect that now `mypkg` is also importable.
 
 This is problematic if you are using a tool like `tox` to test your package in a virtual environment, because you want to test the installed version of your package, not the local code from the repository.
-
