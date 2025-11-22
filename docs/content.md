@@ -245,7 +245,64 @@ Now we get to the useful ones:
 
 ### Skipping tests
 
+#### `skip` mark
 
+To skip tests for whatever reasons, usually OS-dependent tests or similar situations, you can use the `skip` mark, optionally with a reason:
+
+```python
+# why tho
+@pytest.mark.skip(reason="no way of currently testing this")
+def test_the_unknown(): ...
+```
+
+#### calling `pytest.skip()` function
+
+Aside from using the `skip` mark, you can call `pytest.skip(reason)` function directly:
+
+```py
+def test_function():
+    if not valid_config():
+        pytest.skip("unsupported configuration")
+```
+
+For the (imho) **only reasonable reason** for a full skip is for **platform-dependent tests**, which applies to the **whole module/file**. This should look like *this*, for example:
+
+```py
+import sys
+
+import pytest
+
+if not sys.platform.startswith("win"):
+    pytest.skip("skipping windows-only tests", allow_module_level=True)
+```
+
+Remember not to forget the `allow_module_level=True` args or chaos will ensue.
+
+#### `skipif` fixtures
+
+If you really, really, really want to use fixtures to keep code inside test cases clean or something, you can use `skipif` fixture to only skip on a True condition. 
+
+For example, to skip a test on python version lower than 3.13:
+
+```py
+import sys
+
+@pytest.mark.skipif(sys.version_info < (3, 13), reason="requires python3.13 or higher")
+def test_function(): ...
+```
+
+Also, *did you know*, to share a similar attribute, you can assign it to a variable?
+
+```py
+minversion = pytest.mark.skipif(
+    version < (1, 1), reason="at least mymodule-1.1 required"
+)
+
+@minversion
+def test_function(): ...
+```
+
+*insert the more you know meme*
 
 ## Tests structure
 
