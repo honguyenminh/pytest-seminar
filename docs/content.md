@@ -153,9 +153,99 @@ def test_my_fruit_in_basket(my_fruit, fruit_basket):
 
 ## `mark` your test - metadata for tests
 
-Another feature of pytest is `pytest.mark`. `mark` is a helper to set metadata on test functions.
+Another feature of pytest is `pytest.mark`. `mark` is a helper to set metadata on test functions. Basically attributes for your test cases. With marks, you can:
 
-**TODO: finish this**
+- Use with plugins
+- Select tests when testing with `-m`
+
+Let's talk about how to create one first, and then how to use it to select tests
+
+### What is a `mark`?
+
+**Marks are just `@pytest.mark.*` attributes** on tests or test classes. `*` can be **either a built-in mark, or a custom, registered mark**.
+
+For example, to apply a mark named `web_integration_tests` on the `test_send_http` test case, we would first register the mark's name inside our config file (or config hook), with everything after the `:` as comments for that mark:
+
+```toml
+[pytest]
+markers = [
+    "web_integration_tests", # our custom mark
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')", # a custom mark with documentations after :
+]
+```
+
+If you don't register the mark, it will emits a warning to avoid mistyped marks (thanks python and dynamic typing), and that mark won't have any effect. Of course, except from the built-in ones.
+
+After that, you can apply that mark on the test case like this:
+
+```python
+import pytest
+
+@pytest.mark.web_integration_tests
+def test_send_http():
+    pass  # perform some webtest test for your app
+```
+
+Now that case is marked! Onto using it.
+
+### Selecting tests
+
+Let's say you have a project with tests like this (would be in different files):
+
+```python
+import pytest
+
+@pytest.mark.web_integration_tests
+def test_send_http():
+    pass  # perform some webtest test for your app
+
+# other tests below, unmarked or marked with different marks
+@pytest.mark.serial
+def test_another():
+    pass
+
+class TestClass:
+    def test_method(self):
+        pass
+```
+
+You have test cases that is doing integration tests and want to run them only. In that case, you can use `-m` to select and run only these tests:
+
+```bash
+pytest -m web_integration_tests
+```
+
+Or, you can run all tests except the integrations tests with:
+
+```bash
+pytest -m "not web_integration_tests"
+```
+
+Usual python-style boolean expressions can be used here (and, or, not, parentheses). Go wild with the marks selector.
+
+```bash
+pytest -m "serial and (bucket or database or not mockup)"
+```
+
+Usage with plugins will be covered in, well, plugins.
+
+### Built-in marks
+
+pytest also includes a few built-in marks to use, and they will affect the test case marked. Here's a few of them that exists but is quite dumb (at least imo):
+
+- usefixtures - use fixtures on a test function or class. In case you want to apply fixtures to a whole class. Don't use this for the test function, that would be dumb.
+- filterwarnings - filter certain warnings of a test function. *Why tho?* But it's there if you need it.
+
+Now we get to the useful ones:
+
+- skip - always skip a test function
+- skipif - skip a test function if a certain condition is met
+- xfail - produce an “expected failure” outcome if a certain condition is met
+- parametrize - perform multiple calls to the same test function.
+
+### Skipping tests
+
+
 
 ## Tests structure
 
@@ -182,7 +272,7 @@ As long as your test files and test classes/functions are named like the convent
 
 ### WARNING
 
-Even though pytest can **discover** the tests, it cannot automatically handle **imports** depends on your project layout because Python shennanigans. Some example are given below.
+Even though pytest can **discover** the tests, it cannot automatically handle **imports** depends on your project layout because Python shennanigans. Some examples are given below.
 
 ### Separate test folder
 
