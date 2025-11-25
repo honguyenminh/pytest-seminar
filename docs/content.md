@@ -1,5 +1,7 @@
 # pytest 101
 
+> this doc is 100% human-generated. all mistakes are my own.
+
 *pytest* is a tool/framework used for writing and executing tests in Python
 
 pytest includes:
