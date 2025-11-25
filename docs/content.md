@@ -19,6 +19,16 @@ Or add to **DEVELOPMENT** requirements.txt.
 
 Then, run the command `pytest` in your project root folder to try running it.
 
+It's that simple.
+
+### Configuration
+
+You can pass configs as flags directly into `pytest` command when running, or for convenience, declare them inside *a config file*.
+
+pytest supports `toml` file and `ini` file as config, but `toml` is recommended.
+
+Config values to keep in mind will be shown later on in this guide. The full list can be found on [pytest docs site](https://docs.pytest.org/en/stable/reference/customize.html).
+
 ## Example test files
 
 A test file would look something like:
@@ -303,6 +313,42 @@ def test_function(): ...
 ```
 
 *insert the more you know meme*
+
+### Parameterizes your test cases - `@pytest.mark.parametrize`
+
+If your test cases have similar code but just different input/output, or you want to run a test case on a set of inputs, you dont need to re-write that case many time, just use `@pytest.mark.parametrize`
+
+For example, to run a test case with input arg `a` using 5 different values, `0,999,1.0,2000,-0.0` for it, all expecting the case assert to pass.
+
+```py
+import pytest
+
+@pytest.mark.parametrize("test_input", [0,999,1.0,2000,-0.0])
+def test_abs(test_input):
+    assert abs(test_input) >= 0
+```
+
+Or, another frequent use case, a list of inputs and expected result for each input set. For example, testing an `add(a, b)` function with a, b and expected. In case of many args, each arg will be a tuple `(value1, value2, ...)`.
+
+```py
+import pytest
+
+@pytest.mark.parametrize("a,b,expected", [
+    (1,2,3),
+    (1,3,4),
+    (-2,2,0)
+])
+def test_add(a, b, expected):
+    assert add(a, b) == expected
+```
+
+This helps writing cases for techniques like *boundary value analysis* and *equivalence partitioning* **a lot faster and less repetitive**.
+
+However, **keep in mind**, parameter values are **passed as-is to tests** (no copy whatsoever).
+
+For example, if you pass a list or a dict as a parameter value, and the test case code mutates it, the mutations will be reflected in subsequent test case calls.
+
+Why doesn't it make a deep copy, to "ensure the integrity of tests"? That I do not know. *It boggles me that they leave out such an important details.* They know about it, yet refuses to change.
 
 ## Tests structure
 
